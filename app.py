@@ -22,14 +22,14 @@ else:
     df = pd.DataFrame(columns=columns)
     df.to_csv(csv_file, index=False)
 
-# Convert 'Date' column to datetime
-if 'Date' in df.columns:
+# Convert 'Date' column to datetime - FIXED VERSION
+if 'Date' in df.columns and not df.empty:
+    # Convert all date entries to pandas datetime, handling various formats
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df = df.dropna(subset=['Date'])  # Drop bad dates to avoid sort crash
+    # Drop rows where date conversion failed
+    df = df.dropna(subset=['Date'])
 
-
-
-# Form to ad new price
+# Form to add new price
 st.header("Add New Entry")
 with st.form("entry_form"):
     item = st.text_input("Item name (e.g. Sugar, Bread)")
@@ -38,33 +38,44 @@ with st.form("entry_form"):
     date_selected = st.date_input('Date', value=date.today())
 
     submitted = st.form_submit_button("Save Entry")
-    print(df.columns)
 
     if submitted and item:
+        # Convert date_selected to pandas Timestamp to match existing data
+        date_as_timestamp = pd.Timestamp(date_selected)
+
         new_entry = pd.DataFrame(
-            [[item.title(), price, location.title(), date_selected]], columns=df.columns)
+            [[item.title(), price, location.title(), date_as_timestamp]], columns=df.columns)
         df = pd.concat([df, new_entry], ignore_index=True)
+
+        # Ensure all dates are pandas Timestamps
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df = df.dropna(subset=['Date'])
+
         df.to_csv(csv_file, index=False)
         st.success(f"Saved: {item.title()} at {price} GMD")
-        
 
 # Display full table
 st.header("Price History Table")
-st.dataframe(df.sort_values(by="Date", ascending=False),
-            use_container_width=True)
-
+if not df.empty:
+    # Sort by date (now all dates are datetime objects)
+    df_sorted = df.sort_values(by="Date", ascending=False)
+    st.dataframe(df_sorted, use_container_width=True)
+else:
+    st.info("No data to display yet.")
 
 # Plot chart
 st.header("Price Chart")
-item_list = df['Item'].unique().tolist()
+if not df.empty:
+    item_list = df['Item'].unique().tolist()
 
-if item_list:
-    selected_item = st.selectbox('Select item ot view chart', item_list)
-    filtered_df = df[df['Item'] == selected_item]
+    if item_list:
+        selected_item = st.selectbox('Select item to view chart', item_list)
+        filtered_df = df[df['Item'] == selected_item]
 
-    chart = px.line(filtered_df, x="Date", y='Price',
-                    title=f"{selected_item} Price Over Time")
-    st.plotly_chart(chart, use_container_width=True)
-
+        chart = px.line(filtered_df, x="Date", y='Price',
+                        title=f"{selected_item} Price Over Time")
+        st.plotly_chart(chart, use_container_width=True)
+    else:
+        st.info("No items available for chart.")
 else:
     st.info("No data to display chart yet.")
