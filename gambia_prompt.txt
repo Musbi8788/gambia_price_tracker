@@ -1,0 +1,26 @@
+I’m building a Streamlit app called "Gambia Price Tracker" to help track the prices of common goods (like bread, rice, sugar, etc.) across different locations in The Gambia over time.
+
+Here is what the app currently does:
+- Allows users to input: item name, price, location, and date.
+- Saves this data in a local CSV file called `prices.csv`.
+- Displays a full price history table.
+- Shows a line chart of price trends over time using Plotly.
+
+I want to improve this app and make it more useful, beautiful, and professional.
+
+Here is what I need help with:
+
+1. Suggest and implement useful **features** that would add value to the app (filtering, averages, comparisons, alerts, etc.).
+2. Improve the **code quality** — structure it better, make it more modular, add comments, and fix any bugs or bad practices.
+3. Make the app look better and work better on **mobile**.
+4. Keep it **easy to deploy** (I’m using Streamlit Cloud or local server).
+5. Suggest how I can use this project in my **portfolio** or **resume**.
+6. Bonus: How can I later add **user login**, connect it to **a database** (instead of CSV), or deploy to a real domain?
+
+Here is my current code (paste the full Python code after this message).
+
+Please analyze it like a senior developer doing a code review for a junior dev. Give suggestions clearly, and help improve it step by step. Be direct and constructive.
+
+I’m from The Gambia, and this app is for local use.
+
+Thanks!
