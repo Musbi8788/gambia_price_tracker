@@ -21,7 +21,10 @@ if os.path.exists(csv_file) and os.path.getsize(csv_file) > 0:
 else:
     df = pd.DataFrame(columns=columns)
     df.to_csv(csv_file, index=False)
-
+    
+# Convert 'Date' column to datetime
+if 'Date' in df.columns:
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
 
 # Form to ad new price
