@@ -9,7 +9,7 @@ import numpy as np
 
 # Page configuration - MUST be first Streamlit command
 st.set_page_config(
-    page_title="🇬🇲 Gambia Price Tracker",
+    page_title="Gambia Price Tracker",
     page_icon="🛒",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -63,7 +63,7 @@ COMMON_ITEMS = [
     'Rice (1kg)', 'Bread', 'Sugar (1kg)', 'Oil (1L)', 'Onions (1kg)',
     'Tomatoes (1kg)', 'Fish (1kg)', 'Chicken (1kg)', 'Milk (1L)', 'Eggs (dozen)',
     'Potatoes (1kg)', 'Cassava (1kg)', 'Groundnuts (1kg)', 'Millet (1kg)',
-    'Flour (1kg)', 'Salt (1kg)', 'Soap', 'Detergent', 'Cooking Gas'
+    'Flour (1kg)', 'Salt (1kg)', 'Soap', 'Detergent', 'Cooking Gas', 'Mango'
 ]
 
 GAMBIAN_LOCATIONS = [
@@ -73,6 +73,8 @@ GAMBIAN_LOCATIONS = [
 ]
 
 # Utility functions
+
+
 @st.cache_data
 def load_data():
     """Load data from CSV with caching"""
@@ -83,17 +85,18 @@ def load_data():
             for col in COLUMNS:
                 if col not in df.columns:
                     df[col] = None
-            
+
             # Convert dates properly
             df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
             df = df.dropna(subset=['Date'])
-            
+
             return df.sort_values('Date', ascending=False)
         else:
             return pd.DataFrame(columns=COLUMNS)
     except Exception as e:
         st.error(f"Error loading data: {e}")
         return pd.DataFrame(columns=COLUMNS)
+
 
 def save_data(df):
     """Save dataframe to CSV"""
@@ -108,6 +111,7 @@ def save_data(df):
         st.error(f"Error saving data: {e}")
         return False
 
+
 def validate_entry(item, price, location):
     """Validate form entry"""
     errors = []
@@ -119,23 +123,25 @@ def validate_entry(item, price, location):
         errors.append("Location is required")
     return errors
 
+
 def calculate_price_changes(df):
     """Calculate price changes for alerts"""
     alerts = []
-    
+
     if df.empty:
         return alerts
-    
+
     # Group by item and calculate changes
     for item in df['Item'].unique():
         item_df = df[df['Item'] == item].sort_values('Date')
-        
+
         if len(item_df) >= 2:
             latest = item_df.iloc[-1]
             previous = item_df.iloc[-2]
-            
-            price_change = ((latest['Price'] - previous['Price']) / previous['Price']) * 100
-            
+
+            price_change = (
+                (latest['Price'] - previous['Price']) / previous['Price']) * 100
+
             if abs(price_change) > 15:  # Alert for >15% change
                 alerts.append({
                     'item': item,
@@ -145,45 +151,48 @@ def calculate_price_changes(df):
                     'location': latest['Location'],
                     'date': latest['Date'].strftime('%Y-%m-%d')
                 })
-    
+
     return alerts
+
 
 def create_price_trend_chart(df, selected_item):
     """Create interactive price trend chart"""
     item_df = df[df['Item'] == selected_item].sort_values('Date')
-    
+
     if item_df.empty:
         return None
-    
+
     fig = px.line(
-        item_df, 
-        x='Date', 
+        item_df,
+        x='Date',
         y='Price',
         color='Location',
         title=f'{selected_item} - Price Trends by Location',
         markers=True
     )
-    
+
     fig.update_layout(
         xaxis_title="Date",
         yaxis_title="Price (GMD)",
         height=400,
         showlegend=True
     )
-    
+
     return fig
+
 
 def create_location_comparison_chart(df, selected_item):
     """Create location comparison bar chart"""
     item_df = df[df['Item'] == selected_item]
-    
+
     if item_df.empty:
         return None
-    
+
     # Calculate average price by location
-    avg_prices = item_df.groupby('Location')['Price'].agg(['mean', 'count']).reset_index()
+    avg_prices = item_df.groupby('Location')['Price'].agg(
+        ['mean', 'count']).reset_index()
     avg_prices = avg_prices[avg_prices['count'] >= 1]  # At least 1 entry
-    
+
     fig = px.bar(
         avg_prices,
         x='Location',
@@ -191,11 +200,13 @@ def create_location_comparison_chart(df, selected_item):
         title=f'{selected_item} - Average Price by Location',
         labels={'mean': 'Average Price (GMD)'}
     )
-    
+
     fig.update_layout(height=400)
     return fig
 
 # Main app
+
+
 def main():
     # Header
     st.markdown("""
@@ -204,34 +215,37 @@ def main():
         <p>Track and compare prices of common goods across The Gambia</p>
     </div>
     """, unsafe_allow_html=True)
-    
+
     # Load data
     df = load_data()
-    
+
     # Sidebar for controls
     with st.sidebar:
         st.header("📊 Controls")
-        
+
         # Data summary
         st.metric("Total Entries", len(df))
         if not df.empty:
             st.metric("Unique Items", df['Item'].nunique())
             st.metric("Locations Covered", df['Location'].nunique())
             st.metric("Latest Entry", df['Date'].max().strftime('%Y-%m-%d'))
-        
+
         st.divider()
-        
+
         # Filters
         st.subheader("🔍 Filters")
-        
+
         # Item filter
-        all_items = ['All'] + sorted(df['Item'].unique().tolist()) if not df.empty else ['All']
+        all_items = [
+            'All'] + sorted(df['Item'].unique().tolist()) if not df.empty else ['All']
         selected_item_filter = st.selectbox("Filter by Item", all_items)
-        
+
         # Location filter
-        all_locations = ['All'] + sorted(df['Location'].unique().tolist()) if not df.empty else ['All']
-        selected_location_filter = st.selectbox("Filter by Location", all_locations)
-        
+        all_locations = [
+            'All'] + sorted(df['Location'].unique().tolist()) if not df.empty else ['All']
+        selected_location_filter = st.selectbox(
+            "Filter by Location", all_locations)
+
         # Date range filter
         if not df.empty:
             min_date = df['Date'].min().date()
@@ -244,61 +258,64 @@ def main():
             )
         else:
             date_range = None
-        
+
         # Apply filters
         filtered_df = df.copy()
         if selected_item_filter != 'All':
-            filtered_df = filtered_df[filtered_df['Item'] == selected_item_filter]
+            filtered_df = filtered_df[filtered_df['Item']
+                                    == selected_item_filter]
         if selected_location_filter != 'All':
-            filtered_df = filtered_df[filtered_df['Location'] == selected_location_filter]
+            filtered_df = filtered_df[filtered_df['Location']
+                                    == selected_location_filter]
         if date_range and len(date_range) == 2:
             start_date, end_date = date_range
             filtered_df = filtered_df[
-                (filtered_df['Date'].dt.date >= start_date) & 
+                (filtered_df['Date'].dt.date >= start_date) &
                 (filtered_df['Date'].dt.date <= end_date)
             ]
-    
+
     # Main content area
     col1, col2 = st.columns([2, 1])
-    
+
     with col2:
         # Add new entry form
         st.subheader("➕ Add New Price")
-        
+
         with st.container():
             # Form inputs
             item_input = st.selectbox(
-                "Item", 
+                "Item",
                 options=COMMON_ITEMS,
                 help="Select a common item or type your own"
             )
-            
+
             custom_item = st.text_input("Or enter custom item:")
             final_item = custom_item if custom_item else item_input
-            
+
             price_input = st.number_input(
-                "Price (GMD)", 
-                min_value=0.01, 
-                value=10.0, 
+                "Price (GMD)",
+                min_value=0.01,
+                value=10.0,
                 step=0.50,
                 format="%.2f"
             )
-            
+
             location_input = st.selectbox(
                 "Location",
-                options=GAMBIAN_LOCATIONS
+                options=GAMBIAN_LOCATIONS # diplay gambain locations
             )
-            
+
             date_input = st.date_input(
                 "Date",
                 value=date.today(),
                 max_value=date.today()
             )
-            
+
             # Submit button
             if st.button("💾 Save Entry", type="primary", use_container_width=True):
-                errors = validate_entry(final_item, price_input, location_input)
-                
+                errors = validate_entry(
+                    final_item, price_input, location_input)
+
                 if errors:
                     for error in errors:
                         st.error(error)
@@ -311,17 +328,18 @@ def main():
                         'Date': pd.Timestamp(date_input),
                         'Timestamp': datetime.now()
                     }])
-                    
+
                     # Add to dataframe
                     updated_df = pd.concat([df, new_entry], ignore_index=True)
-                    
+
                     # Save to CSV
                     if save_data(updated_df):
-                        st.success(f"✅ Saved: {final_item} at GMD {price_input}")
+                        st.success(
+                            f"✅ Saved: {final_item} at GMD {price_input}")
                         st.rerun()  # Refresh the app
                     else:
                         st.error("❌ Failed to save entry")
-        
+
         # Price alerts
         if not df.empty and st.session_state.show_alerts:
             alerts = calculate_price_changes(df)
@@ -336,13 +354,13 @@ def main():
                         GMD {alert['previous_price']:.2f} → {alert['latest_price']:.2f}
                     </div>
                     """, unsafe_allow_html=True)
-    
+
     with col1:
         # Charts and data display
         if not filtered_df.empty:
             # Quick stats
             col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
-            
+
             with col_stat1:
                 st.metric("Entries", len(filtered_df))
             with col_stat2:
@@ -354,24 +372,26 @@ def main():
             with col_stat4:
                 max_price = filtered_df['Price'].max()
                 st.metric("Max Price", f"GMD {max_price:.2f}")
-            
+
             st.divider()
-            
+
             # Charts
             if selected_item_filter != 'All':
                 # Price trend chart
-                trend_chart = create_price_trend_chart(filtered_df, selected_item_filter)
+                trend_chart = create_price_trend_chart(
+                    filtered_df, selected_item_filter)
                 if trend_chart:
                     st.plotly_chart(trend_chart, use_container_width=True)
-                
+
                 # Location comparison chart
-                comparison_chart = create_location_comparison_chart(df, selected_item_filter)
+                comparison_chart = create_location_comparison_chart(
+                    df, selected_item_filter)
                 if comparison_chart:
                     st.plotly_chart(comparison_chart, use_container_width=True)
-            
+
             # Data table
             st.subheader("📋 Price History")
-            
+
             # Display options
             col_display1, col_display2 = st.columns(2)
             with col_display1:
@@ -385,35 +405,44 @@ def main():
                         file_name=f"gambia_prices_{date.today()}.csv",
                         mime="text/csv"
                     )
-            
+
             # Show data
             display_df = filtered_df if show_all else filtered_df.head(20)
-            
+
             # Format the display
             display_df_formatted = display_df.copy()
-            display_df_formatted['Price'] = display_df_formatted['Price'].apply(lambda x: f"GMD {x:.2f}")
-            display_df_formatted['Date'] = display_df_formatted['Date'].dt.strftime('%Y-%m-%d')
-            
+            display_df_formatted['Price'] = display_df_formatted['Price'].apply(
+                lambda x: f"GMD {x:.2f}")
+            display_df_formatted['Date'] = display_df_formatted['Date'].dt.strftime(
+                '%Y-%m-%d')
+
             st.dataframe(
                 display_df_formatted[['Item', 'Price', 'Location', 'Date']],
                 use_container_width=True,
                 hide_index=True
             )
-            
+
             if not show_all and len(filtered_df) > 20:
-                st.info(f"Showing 20 of {len(filtered_df)} entries. Check 'Show all entries' to see more.")
-        
+                st.info(
+                    f"Showing 20 of {len(filtered_df)} entries. Check 'Show all entries' to see more.")
+
         else:
-            st.info("📊 No data matches your current filters. Add some price entries to get started!")
-            
+            st.info(
+                "📊 No data matches your current filters. Add some price entries to get started!")
+
             # Show sample data format
             st.subheader("Sample Data")
             sample_data = pd.DataFrame([
-                {'Item': 'Rice (1kg)', 'Price': 'GMD 35.00', 'Location': 'Serekunda', 'Date': '2024-01-15'},
-                {'Item': 'Bread', 'Price': 'GMD 15.00', 'Location': 'Banjul', 'Date': '2024-01-15'},
-                {'Item': 'Sugar (1kg)', 'Price': 'GMD 25.00', 'Location': 'Sukuta', 'Date': '2024-01-14'},
+                {'Item': 'Rice (1kg)', 'Price': 'GMD 35.00',
+                 'Location': 'Serekunda', 'Date': '2024-01-15'},
+                {'Item': 'Bread', 'Price': 'GMD 15.00',
+                    'Location': 'Banjul', 'Date': '2024-01-15'},
+                {'Item': 'Sugar (1kg)', 'Price': 'GMD 25.00',
+                 'Location': 'Sukuta', 'Date': '2024-01-14'},
             ])
-            st.dataframe(sample_data, use_container_width=True, hide_index=True)
+            st.dataframe(sample_data, use_container_width=True,
+                         hide_index=True)
+
 
 if __name__ == "__main__":
     main()
