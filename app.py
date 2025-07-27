@@ -211,7 +211,7 @@ def main():
     # Header
     st.markdown("""
     <div class="main-header">
-        <h1>🇬🇲 Gambia Price Tracker</h1>
+        <h1>Gambia Price Tracker</h1>
         <p>Track and compare prices of common goods across The Gambia</p>
     </div>
     """, unsafe_allow_html=True)
@@ -221,7 +221,7 @@ def main():
 
     # Sidebar for controls
     with st.sidebar:
-        st.header("📊 Controls")
+        st.header("Controls")
 
         # Data summary
         st.metric("Total Entries", len(df))
@@ -233,7 +233,7 @@ def main():
         st.divider()
 
         # Filters
-        st.subheader("🔍 Filters")
+        st.subheader("Filters")
 
         # Item filter
         all_items = [
@@ -279,7 +279,7 @@ def main():
 
     with col2:
         # Add new entry form
-        st.subheader("➕ Add New Price")
+        st.subheader("Add New Price")
 
         with st.container():
             # Form inputs
@@ -312,7 +312,7 @@ def main():
             )
 
             # Submit button
-            if st.button("💾 Save Entry", type="primary", use_container_width=True):
+            if st.button("Save Entry", type="primary", use_container_width=True):
                 errors = validate_entry(
                     final_item, price_input, location_input)
 
@@ -335,7 +335,7 @@ def main():
                     # Save to CSV
                     if save_data(updated_df):
                         st.success(
-                            f"✅ Saved: {final_item} at GMD {price_input}")
+                            f"Saved: {final_item} at GMD {price_input}")
                         st.rerun()  # Refresh the app
                     else:
                         st.error("❌ Failed to save entry")
@@ -344,9 +344,9 @@ def main():
         if not df.empty and st.session_state.show_alerts:
             alerts = calculate_price_changes(df)
             if alerts:
-                st.subheader("⚠️ Price Alerts")
+                st.subheader("Price Alerts")
                 for alert in alerts[:3]:  # Show max 3 alerts
-                    change_emoji = "📈" if alert['change'] > 0 else "📉"
+                    change_emoji = "" if alert['change'] > 0 else ""
                     st.markdown(f"""
                     <div class="alert-box">
                         <strong>{change_emoji} {alert['item']}</strong><br>
@@ -390,14 +390,14 @@ def main():
                     st.plotly_chart(comparison_chart, use_container_width=True)
 
             # Data table
-            st.subheader("📋 Price History")
+            st.subheader("Price History")
 
             # Display options
             col_display1, col_display2 = st.columns(2)
             with col_display1:
                 show_all = st.checkbox("Show all entries", value=False)
             with col_display2:
-                if st.button("📥 Download CSV"):
+                if st.button("Download CSV"):
                     csv = filtered_df.to_csv(index=False)
                     st.download_button(
                         label="Download filtered data",
@@ -428,7 +428,7 @@ def main():
 
         else:
             st.info(
-                "📊 No data matches your current filters. Add some price entries to get started!")
+                "No data matches your current filters. Add some price entries to get started!")
 
             # Show sample data format
             st.subheader("Sample Data")
